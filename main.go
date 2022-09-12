@@ -18,6 +18,8 @@ var payloads = []string{
 	"ls&id; ls &id; ls& id; ls & id",
 	"> /tmp/output.txt",
 	"< /etc/passwd",
+	"https://google.com/search?q=helloworld",
+	"foo1=bar1&foo2=bar2",
 }
 
 var commands = []string{
@@ -46,68 +48,81 @@ var operators = []string{
 	"<",
 }
 
-var signature string = ""
+var alertSignatures = []string{
+	"cp",
+	"cop",
+	"cpo",
+	"op",
+	"oc",
+}
 
-func findCommand(payload string, command string, initInd int) (bool, int) {
-	cmdInd := strings.Index(payload, command)
-	if cmdInd != -1 {
-		signature += "c"
-		fmt.Printf("cmd at %d\n", cmdInd)
-		return true, cmdInd
+var signature string
+
+func findCMD(payload string) (bool, int) {
+	for _, command := range commands {
+		cmdInd := strings.Index(payload, command)
+		if cmdInd != -1 {
+			signature += "c"
+			// fmt.Printf("cmd at %d\n", cmdInd)
+			return true, cmdInd + len(command)
+		}
 	}
 	return false, -1
 }
 
-func findPath(payload string) bool {
+func findPath(payload string) (bool, int) {
 	pathInd := strings.Index(payload, "/")
 	if pathInd != -1 {
 		signature += "p"
-		fmt.Printf("path at %d\n", pathInd)
-		return true
+		// fmt.Printf("path at %d\n", pathInd)
+		return true, pathInd + 1
+	}
+	return false, -1
+}
+
+func findOperator(payload string) (bool, int) {
+	for _, operator := range operators {
+		operatorInd := strings.Index(payload, operator)
+		if operatorInd != -1 {
+			signature += "o"
+			// fmt.Printf("operator at %d\n", operatorInd)
+			return true, operatorInd + len(operator)
+		}
+	}
+	return false, -1
+}
+
+func checkSignature() bool {
+	for _, alertSignature := range alertSignatures {
+		if signature == alertSignature {
+			return true
+		}
 	}
 	return false
 }
 
-func findOperator(payload string, operator string) (bool, int) {
-	operatorInd := strings.Index(payload, operator)
-	if operatorInd != -1 {
-		signature += "o"
-		fmt.Printf("operator at %d\n", operatorInd)
-		return true, operatorInd
-	}
-	return false, -1
-}
-
 func detectCMDI(payload string) {
-	fmt.Printf("payload: %s\n", payload)
-	for _, command := range commands {
-		cmdFound, cmdInd := findCommand(payload, command, 0)
-		if cmdFound {
-			cmdLen := len(command)
-			payloadPart := payload[cmdInd+cmdLen:]
-			fmt.Println(payloadPart)
-			pathFound := findPath(payloadPart)
-			if pathFound {
-				break
-			} else {
-				for _, operator := range operators {
-					operatorFound, operatorInd := findOperator(payloadPart, operator)
-					if operatorFound {
-
-					}
-				}
-			}
-			fmt.Printf("signature for payload %s\n\n", signature)
-			break
+	cmdFound, cmdInd := findCMD(payload)
+	if cmdFound {
+		// if command was found then search for path or operator
+		findPath(payload[cmdInd:])
+		findOperator(payload[cmdInd:])
+	} else {
+		operatorFound, operatorInd := findOperator(payload)
+		if operatorFound {
+			findCMD(payload[operatorInd:])
+			findPath(payload[operatorInd:])
 		}
+	}
+	alert := checkSignature()
+	if alert {
+		fmt.Printf("alert for %s payload\n\n", payload)
 	}
 }
 
 func main() {
-	// payload := "/usr/bin/cat /etc/passwd"
-	// fmt.Println(payload[:])
-	// fmt.Println(payload[3:])
 	for _, payload := range payloads {
+		signature = ""
 		detectCMDI(payload)
 	}
 }
