@@ -1,12 +1,12 @@
 package command_injection
 
 import (
-	"fmt"
 	"strings"
 )
 
 var alertSignatures = []string{
 	"cp",
+	"co",
 	"cop",
 	"cpo",
 	"op",
@@ -28,6 +28,7 @@ var elements = map[string][]string{
 		"python3",
 		"python",
 		"socat",
+		"rm",
 	},
 	"o": {
 		";",
@@ -37,6 +38,7 @@ var elements = map[string][]string{
 		"&&",
 		">",
 		"<",
+		"$(",
 	},
 }
 
@@ -74,21 +76,25 @@ func checkCMDI(payloadPart string) {
 	findCmdOrOperator(payloadPart, "o")
 }
 
-func Detect(payload string) {
+func Detect(payload string) bool {
 	splitedPayload := strings.Split(payload, " ")
 	signature = ""
 	for _, payloadPart := range splitedPayload {
 		checkCMDI(payloadPart)
 	}
 	payloadLength := len(splitedPayload)
+	// log.Printf("Signature %s was created for %s payload\n\n", signature, payload)
 	if payloadLength > 1 {
 		alert := checkSignature()
 		if alert {
-			fmt.Printf("alert signature %s for %s payload\n\n", signature, payload)
+			// log.Printf("Alert signature %s for %s payload\n\n", signature, payload)
+			return true
 		}
 	} else {
 		if len(signature) > 1 && signature != "cp" {
-			fmt.Printf("alert signature %s for %s payload\n\n", signature, payload)
+			// log.Printf("Alert signature %s for %s payload\n\n", signature, payload)
+			return true
 		}
 	}
+	return false
 }
