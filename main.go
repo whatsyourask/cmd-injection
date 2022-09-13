@@ -21,6 +21,7 @@ var payloads = []string{
 	"https://google.com/search?q=helloworld",
 	"foo1=bar1&foo2=bar2",
 	"cat/etc/passwd",
+	"ls&&whoami",
 }
 
 var alertSignatures = []string{
@@ -60,25 +61,21 @@ var elements = map[string][]string{
 
 var signature string
 
-func findCmdOrOperator(payload string, element_key string) (bool, int) {
+func findCmdOrOperator(payloadPart string, element_key string) {
 	for _, element := range elements[element_key] {
-		elementInd := strings.Index(payload, element)
+		elementInd := strings.Index(payloadPart, element)
 		if elementInd != -1 {
 			signature += element_key
-			return true, elementInd + len(element)
 		}
 	}
-	return false, -1
 }
 
-func findPath(payload string) (bool, int) {
-	pathInd := strings.Index(payload, "/")
+func findPath(payloadPart string) {
+	pathInd := strings.Index(payloadPart, "/")
 	if pathInd != -1 {
 		signature += "p"
 		// fmt.Printf("path at %d\n", pathInd)
-		return true, pathInd + 1
 	}
-	return false, -1
 }
 
 func checkSignature() bool {
@@ -90,19 +87,10 @@ func checkSignature() bool {
 	return false
 }
 
-func detectCMDI(payload string) {
-	cmdFound, _ := findCmdOrOperator(payload, "c")
-	if cmdFound {
-		// if command was found then search for path or operator
-		findPath(payload)
-		findCmdOrOperator(payload, "o")
-	} else {
-		operatorFound, _ := findCmdOrOperator(payload, "o")
-		if operatorFound {
-			findCmdOrOperator(payload, "c")
-			findPath(payload)
-		}
-	}
+func detectCMDI(payloadPart string) {
+	findCmdOrOperator(payloadPart, "c")
+	findPath(payloadPart)
+	findCmdOrOperator(payloadPart, "o")
 }
 
 func main() {
@@ -112,9 +100,16 @@ func main() {
 		for _, payloadPart := range payload {
 			detectCMDI(payloadPart)
 		}
-		alert := checkSignature()
-		if alert {
-			fmt.Printf("alert signature %s for %s payload\n\n", signature, payload)
+		payloadLength := len(payload)
+		if payloadLength > 1 {
+			alert := checkSignature()
+			if alert {
+				fmt.Printf("alert signature %s for %s payload\n\n", signature, payload)
+			}
+		} else {
+			if len(signature) > 1 && signature != "cp" {
+				fmt.Printf("alert signature %s for %s payload\n\n", signature, payload)
+			}
 		}
 	}
 }
