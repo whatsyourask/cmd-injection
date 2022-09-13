@@ -1,28 +1,26 @@
 package main
 
-import "github.com/whatsyourask/cmd-injection-in-input-alert/command_injection"
+import (
+	"log"
+	"net/url"
+	"os"
+	"strings"
 
-var payloads = []string{
-	"/usr/bin/cat /etc/passwd",
-	"cat /etc/passwd; ls",
-	"/usr/bin/cat /etc/passwd & ls",
-	"cat /etc/passwd && ls",
-	"/usr/bin/cat /etc/passwd | ls",
-	"cat /etc/passwd || ls",
-	"echo $(cat /etc/passwd)",
-	"echo `cat /etc/passwd`",
-	"ls||id; ls ||id; ls|| id; ls || id",
-	"ls&id; ls &id; ls& id; ls & id",
-	"> /tmp/output.txt",
-	"< /etc/passwd",
-	"https://google.com/search?q=helloworld",
-	"foo1=bar1&foo2=bar2",
-	"cat/etc/passwd",
-	"ls&&whoami",
-}
+	"github.com/whatsyourask/cmd-injection-in-input-alert/command_injection"
+)
 
 func main() {
-	for _, payload := range payloads {
-		command_injection.Detect(payload)
+	payloads, err := os.ReadFile("command-injection-commix.txt")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	payloadsStr := string(payloads)
+	payloadsStrSplit := strings.Split(payloadsStr, "\n")
+	for _, payload := range payloadsStrSplit {
+		decodedPayload, err := url.QueryUnescape(payload)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		command_injection.Detect(decodedPayload)
 	}
 }
