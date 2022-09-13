@@ -87,29 +87,33 @@ func checkSignature() bool {
 	return false
 }
 
-func detectCMDI(payloadPart string) {
+func checkCMDI(payloadPart string) {
 	findCmdOrOperator(payloadPart, "c")
 	findPath(payloadPart)
 	findCmdOrOperator(payloadPart, "o")
 }
 
+func detectCMDI(payload string) {
+	splitedPayload := strings.Split(payload, " ")
+	signature = ""
+	for _, payloadPart := range splitedPayload {
+		checkCMDI(payloadPart)
+	}
+	payloadLength := len(splitedPayload)
+	if payloadLength > 1 {
+		alert := checkSignature()
+		if alert {
+			fmt.Printf("alert signature %s for %s payload\n\n", signature, payload)
+		}
+	} else {
+		if len(signature) > 1 && signature != "cp" {
+			fmt.Printf("alert signature %s for %s payload\n\n", signature, payload)
+		}
+	}
+}
+
 func main() {
 	for _, payload := range payloads {
-		payload := strings.Split(payload, " ")
-		signature = ""
-		for _, payloadPart := range payload {
-			detectCMDI(payloadPart)
-		}
-		payloadLength := len(payload)
-		if payloadLength > 1 {
-			alert := checkSignature()
-			if alert {
-				fmt.Printf("alert signature %s for %s payload\n\n", signature, payload)
-			}
-		} else {
-			if len(signature) > 1 && signature != "cp" {
-				fmt.Printf("alert signature %s for %s payload\n\n", signature, payload)
-			}
-		}
+		detectCMDI(payload)
 	}
 }
