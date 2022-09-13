@@ -22,32 +22,6 @@ var payloads = []string{
 	"foo1=bar1&foo2=bar2",
 }
 
-var commands = []string{
-	"cat",
-	"echo",
-	"whoami",
-	"ping",
-	"traceroute",
-	"bash",
-	"sh",
-	"ls",
-	"nc",
-	"ncat",
-	"python3",
-	"python",
-	"socat",
-}
-
-var operators = []string{
-	";",
-	"|",
-	"||",
-	"&",
-	"&&",
-	">",
-	"<",
-}
-
 var alertSignatures = []string{
 	"cp",
 	"cop",
@@ -56,15 +30,41 @@ var alertSignatures = []string{
 	"oc",
 }
 
+var elements = map[string][]string{
+	"c": {
+		"cat",
+		"echo",
+		"whoami",
+		"ping",
+		"traceroute",
+		"bash",
+		"sh",
+		"ls",
+		"nc",
+		"ncat",
+		"python3",
+		"python",
+		"socat",
+	},
+	"o": {
+		";",
+		"|",
+		"||",
+		"&",
+		"&&",
+		">",
+		"<",
+	},
+}
+
 var signature string
 
-func findCMD(payload string) (bool, int) {
-	for _, command := range commands {
-		cmdInd := strings.Index(payload, command)
-		if cmdInd != -1 {
-			signature += "c"
-			// fmt.Printf("cmd at %d\n", cmdInd)
-			return true, cmdInd + len(command)
+func findCmdOrOperator(payload string, element_key string) (bool, int) {
+	for _, element := range elements[element_key] {
+		elementInd := strings.Index(payload, element)
+		if elementInd != -1 {
+			signature += element_key
+			return true, elementInd + len(element)
 		}
 	}
 	return false, -1
@@ -80,18 +80,6 @@ func findPath(payload string) (bool, int) {
 	return false, -1
 }
 
-func findOperator(payload string) (bool, int) {
-	for _, operator := range operators {
-		operatorInd := strings.Index(payload, operator)
-		if operatorInd != -1 {
-			signature += "o"
-			// fmt.Printf("operator at %d\n", operatorInd)
-			return true, operatorInd + len(operator)
-		}
-	}
-	return false, -1
-}
-
 func checkSignature() bool {
 	for _, alertSignature := range alertSignatures {
 		if signature == alertSignature {
@@ -102,15 +90,15 @@ func checkSignature() bool {
 }
 
 func detectCMDI(payload string) {
-	cmdFound, cmdInd := findCMD(payload)
+	cmdFound, cmdInd := findCmdOrOperator(payload, "c")
 	if cmdFound {
 		// if command was found then search for path or operator
 		findPath(payload[cmdInd:])
-		findOperator(payload[cmdInd:])
+		findCmdOrOperator(payload[cmdInd:], "o")
 	} else {
-		operatorFound, operatorInd := findOperator(payload)
+		operatorFound, operatorInd := findCmdOrOperator(payload, "o")
 		if operatorFound {
-			findCMD(payload[operatorInd:])
+			findCmdOrOperator(payload[operatorInd:], "c")
 			findPath(payload[operatorInd:])
 		}
 	}
