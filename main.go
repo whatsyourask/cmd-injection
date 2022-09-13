@@ -20,6 +20,7 @@ var payloads = []string{
 	"< /etc/passwd",
 	"https://google.com/search?q=helloworld",
 	"foo1=bar1&foo2=bar2",
+	"cat/etc/passwd",
 }
 
 var alertSignatures = []string{
@@ -82,7 +83,7 @@ func findPath(payload string) (bool, int) {
 
 func checkSignature() bool {
 	for _, alertSignature := range alertSignatures {
-		if signature == alertSignature {
+		if strings.Contains(signature, alertSignature) {
 			return true
 		}
 	}
@@ -90,27 +91,30 @@ func checkSignature() bool {
 }
 
 func detectCMDI(payload string) {
-	cmdFound, cmdInd := findCmdOrOperator(payload, "c")
+	cmdFound, _ := findCmdOrOperator(payload, "c")
 	if cmdFound {
 		// if command was found then search for path or operator
-		findPath(payload[cmdInd:])
-		findCmdOrOperator(payload[cmdInd:], "o")
+		findPath(payload)
+		findCmdOrOperator(payload, "o")
 	} else {
-		operatorFound, operatorInd := findCmdOrOperator(payload, "o")
+		operatorFound, _ := findCmdOrOperator(payload, "o")
 		if operatorFound {
-			findCmdOrOperator(payload[operatorInd:], "c")
-			findPath(payload[operatorInd:])
+			findCmdOrOperator(payload, "c")
+			findPath(payload)
 		}
-	}
-	alert := checkSignature()
-	if alert {
-		fmt.Printf("alert for %s payload\n\n", payload)
 	}
 }
 
 func main() {
 	for _, payload := range payloads {
+		payload := strings.Split(payload, " ")
 		signature = ""
-		detectCMDI(payload)
+		for _, payloadPart := range payload {
+			detectCMDI(payloadPart)
+		}
+		alert := checkSignature()
+		if alert {
+			fmt.Printf("alert signature %s for %s payload\n\n", signature, payload)
+		}
 	}
 }
