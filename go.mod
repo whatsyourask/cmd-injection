@@ -1,3 +1,3 @@
-module github.com/whatsyourask/cmd-injection-in-input-alert
+module github.com/whatsyourask/cmd-injection
 
 go 1.18

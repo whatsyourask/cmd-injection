@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/whatsyourask/cmd-injection-in-input-alert/command_injection"
+	"github.com/whatsyourask/cmd-injection/cmd_injection"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		alert := command_injection.Detect(decodedPayload)
+		alert := cmd_injection.Detect(decodedPayload)
 		if alert {
 			alertCount++
 		} else {
