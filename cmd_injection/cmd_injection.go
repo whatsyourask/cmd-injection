@@ -1,6 +1,7 @@
 package cmd_injection
 
 import (
+	"log"
 	"strings"
 )
 
@@ -83,18 +84,12 @@ func Detect(payload string) bool {
 		checkCMDI(payloadPart)
 	}
 	payloadLength := len(splitedPayload)
-	// log.Printf("Signature %s was created for %s payload\n\n", signature, payload)
+	log.Printf("Signature %s was created for %s payload\n\n", signature, payload)
+	alert := false
 	if payloadLength > 1 {
-		alert := checkSignature()
-		if alert {
-			// log.Printf("Alert signature %s for %s payload\n\n", signature, payload)
-			return true
-		}
-	} else {
-		if len(signature) > 1 && signature != "cp" {
-			// log.Printf("Alert signature %s for %s payload\n\n", signature, payload)
-			return true
-		}
+		alert = checkSignature()
+
 	}
-	return false
+	log.Printf("Signature %s with alert %d for %s payload\n\n", signature, alert, payload)
+	return alert
 }

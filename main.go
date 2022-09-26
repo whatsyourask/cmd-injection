@@ -23,7 +23,7 @@ func readPayloads(path string) ([]string, int) {
 
 func main() {
 	payloadsPath := []string{
-		"payloads/cmd-injection-seclists.txt",
+		//"payloads/cmd-injection-seclists.txt",
 		"payloads/cmd-injection-custom.txt",
 		"payloads/cmd-injection-fp.txt",
 	}

